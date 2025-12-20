@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Устное собеседование по русскому языку</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Устное собеседование по русскому языку</h1>
+            <p class="subtitle">Подготовка к устному собеседованию для 9 класса</p>
+        </header>
+
+        <main>
+            <div class="exam-section">
+                <h2>Выберите тип задания</h2>
+                <div class="task-types">
+                    <button class="task-btn" data-type="reading">Чтение текста</button>
+                    <button class="task-btn" data-type="retelling">Пересказ текста</button>
+                    <button class="task-btn" data-type="monologue">Монолог</button>
+                </div>
+            </div>
+
+            <div id="task-section" class="task-section hidden">
+                <h2 id="task-title"></h2>
+                <div class="task-content">
+                    <div class="task-instructions">
+                        <h3>Инструкции:</h3>
+                        <p id="instructions"></p>
+                    </div>
+                    <div class="task-text">
+                        <h3>Задание:</h3>
+                        <div id="task-text-content"></div>
+                    </div>
+                </div>
+                
+                <div class="answer-section">
+                    <h3>Ваш ответ:</h3>
+                    <textarea id="student-answer" rows="8" placeholder="Введите ваш ответ здесь..."></textarea>
+                    <div class="buttons">
+                        <button id="check-btn" class="check-btn">Проверить ответ</button>
+                        <button id="new-task-btn" class="new-task-btn">Новое задание</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-section" class="result-section hidden">
+                <h2>Результат проверки</h2>
+                <div class="score">
+                    <span class="score-value" id="score"></span>
+                    <span class="score-max" id="max-score"></span>
+                </div>
+                <div class="feedback">
+                    <h3>Обратная связь:</h3>
+                    <p id="feedback-text"></p>
+                </div>
+                <div class="criteria" id="criteria"></div>
+                <button id="back-btn" class="back-btn">Вернуться к заданию</button>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <p>Проверка ответа...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
