@@ -41,12 +41,14 @@ header h1 {
 
 .exam-section {
     margin-bottom: 30px;
+    transition: margin 0.6s ease, padding 0.6s ease, opacity 0.5s ease;
 }
 
 .exam-section h2 {
     color: #333;
     margin-bottom: 20px;
     font-size: 1.8em;
+    transition: margin 0.5s ease, font-size 0.5s ease;
 }
 
 .task-types {
@@ -54,6 +56,45 @@ header h1 {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
     margin-bottom: 30px;
+    transition: gap 0.5s ease, margin 0.5s ease;
+}
+
+/* После выбора типа — блок сдвигается вверх, акцент на задании */
+main.task-selected .exam-section {
+    margin-bottom: 12px;
+    padding-top: 0;
+}
+
+main.task-selected .exam-section h2 {
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    color: #666;
+}
+
+main.task-selected .task-types {
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+main.task-selected .task-btn {
+    padding: 10px 16px;
+    font-size: 0.95em;
+    transition: transform 0.2s, box-shadow 0.2s, padding 0.5s ease, font-size 0.5s ease;
+}
+
+main.task-selected .task-section {
+    animation: slideUpFocus 0.6s ease forwards;
+}
+
+@keyframes slideUpFocus {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .task-btn {
@@ -187,7 +228,14 @@ header h1 {
 
 .result-section h2 {
     color: #333;
-    margin-bottom: 20px;
+    margin-bottom: 6px;
+}
+
+.result-task-type {
+    font-size: 0.95em;
+    color: #667eea;
+    margin-bottom: 16px;
+    font-weight: 500;
 }
 
 .score {

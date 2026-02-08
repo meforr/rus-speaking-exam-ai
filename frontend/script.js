@@ -4,9 +4,11 @@ let currentTaskType = null;
 let currentTask = null;
 
 // Элементы DOM
+const mainContent = document.getElementById('main-content');
 const taskSection = document.getElementById('task-section');
 const resultSection = document.getElementById('result-section');
 const loading = document.getElementById('loading');
+const resultTaskTypeEl = document.getElementById('result-task-type');
 const taskTitle = document.getElementById('task-title');
 const instructions = document.getElementById('instructions');
 const taskTextContent = document.getElementById('task-text-content');
@@ -60,6 +62,7 @@ async function loadTask(taskType) {
         
         currentTask = await response.json();
         displayTask(currentTask);
+        mainContent.classList.add('task-selected');
     } catch (error) {
         alert('Ошибка при загрузке задания: ' + error.message);
         console.error(error);
@@ -123,6 +126,7 @@ async function checkAnswer() {
 }
 
 function displayResult(result) {
+    resultTaskTypeEl.textContent = taskTypeNames[currentTask.task_type] || currentTask.task_type;
     scoreElement.textContent = result.score;
     maxScoreElement.textContent = `из ${result.max_score}`;
     feedbackText.textContent = result.feedback;
