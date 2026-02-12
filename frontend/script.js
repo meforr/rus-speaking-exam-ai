@@ -1,9 +1,13 @@
-const API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE = `${window.location.origin}/api`;
 
 let currentTaskType = null;
 let currentTask = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordedBlob = null;
+let recordingStartTime = null;
+let recordingTimerInterval = null;
 
-// Элементы DOM
 const mainContent = document.getElementById('main-content');
 const taskSection = document.getElementById('task-section');
 const resultSection = document.getElementById('result-section');
@@ -12,7 +16,6 @@ const resultTaskTypeEl = document.getElementById('result-task-type');
 const taskTitle = document.getElementById('task-title');
 const instructions = document.getElementById('instructions');
 const taskTextContent = document.getElementById('task-text-content');
-const studentAnswer = document.getElementById('student-answer');
 const checkBtn = document.getElementById('check-btn');
 const newTaskBtn = document.getElementById('new-task-btn');
 const backBtn = document.getElementById('back-btn');
@@ -20,15 +23,20 @@ const scoreElement = document.getElementById('score');
 const maxScoreElement = document.getElementById('max-score');
 const feedbackText = document.getElementById('feedback-text');
 const criteriaElement = document.getElementById('criteria');
+const startRecordBtn = document.getElementById('start-record-btn');
+const stopRecordBtn = document.getElementById('stop-record-btn');
+const playRecordBtn = document.getElementById('play-record-btn');
+const clearRecordBtn = document.getElementById('clear-record-btn');
+const audioPreview = document.getElementById('audio-preview');
+const recordingStatus = document.getElementById('recording-status');
+const recordingTimer = document.getElementById('recording-timer');
 
-// Названия типов заданий
 const taskTypeNames = {
     reading: 'Чтение текста',
     retelling: 'Пересказ текста',
     monologue: 'Монолог'
 };
 
-// Обработчики событий
 document.querySelectorAll('.task-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const taskType = btn.dataset.type;
@@ -36,6 +44,10 @@ document.querySelectorAll('.task-btn').forEach(btn => {
     });
 });
 
+startRecordBtn.addEventListener('click', startRecording);
+stopRecordBtn.addEventListener('click', stopRecording);
+playRecordBtn.addEventListener('click', playRecording);
+clearRecordBtn.addEventListener('click', clearRecording);
 checkBtn.addEventListener('click', checkAnswer);
 newTaskBtn.addEventListener('click', () => {
     if (currentTaskType) {
@@ -47,12 +59,11 @@ backBtn.addEventListener('click', () => {
     taskSection.classList.remove('hidden');
 });
 
-// Функции
 async function loadTask(taskType) {
     currentTaskType = taskType;
     taskSection.classList.remove('hidden');
     resultSection.classList.add('hidden');
-    studentAnswer.value = '';
+    resetRecording();
     
     try {
         const response = await fetch(`${API_BASE}/task/${taskType}`);
@@ -81,15 +92,13 @@ function displayTask(task) {
 }
 
 async function checkAnswer() {
-    const answer = studentAnswer.value.trim();
-    
-    if (!answer) {
-        alert('Пожалуйста, введите ваш ответ');
-        return;
-    }
-    
     if (!currentTask) {
         alert('Сначала загрузите задание');
+        return;
+    }
+
+    if (!recordedBlob) {
+        alert('Пожалуйста, запишите ваш ответ, прежде чем отправлять его на проверку.');
         return;
     }
     
@@ -98,16 +107,17 @@ async function checkAnswer() {
     resultSection.classList.add('hidden');
     
     try {
-        const response = await fetch(`${API_BASE}/check`, {
+        const formData = new FormData();
+        formData.append('task_type', currentTask.task_type);
+        if (currentTask.task_id !== undefined && currentTask.task_id !== null) {
+            formData.append('task_id', String(currentTask.task_id));
+        }
+        const fileName = 'answer.webm';
+        formData.append('audio', recordedBlob, fileName);
+
+        const response = await fetch(`${API_BASE}/check-audio`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                task_type: currentTask.task_type,
-                student_answer: answer,
-                task_id: currentTask.task_id
-            })
+            body: formData,
         });
         
         if (!response.ok) {
@@ -131,7 +141,6 @@ function displayResult(result) {
     maxScoreElement.textContent = `из ${result.max_score}`;
     feedbackText.textContent = result.feedback;
     
-    // Отображение критериев
     if (result.criteria && Object.keys(result.criteria).length > 0) {
         let criteriaHtml = '<h3>Критерии оценки:</h3><ul>';
         for (const [key, value] of Object.entries(result.criteria)) {
@@ -148,17 +157,166 @@ function displayResult(result) {
     resultSection.classList.remove('hidden');
 }
 
-// Проверка доступности API при загрузке
+function updateRecordingUI(state) {
+    if (state === 'idle') {
+        startRecordBtn.disabled = false;
+        stopRecordBtn.disabled = true;
+        playRecordBtn.disabled = !recordedBlob;
+        clearRecordBtn.disabled = !recordedBlob;
+        checkBtn.disabled = !recordedBlob;
+        recordingStatus.textContent = 'Нажмите «Начать запись» и произнесите ответ.';
+        recordingTimer.textContent = '00:00';
+    } else if (state === 'recording') {
+        startRecordBtn.disabled = true;
+        stopRecordBtn.disabled = false;
+        playRecordBtn.disabled = true;
+        clearRecordBtn.disabled = true;
+        checkBtn.disabled = true;
+        recordingStatus.textContent = 'Идёт запись... Говорите в микрофон.';
+    } else if (state === 'recorded') {
+        startRecordBtn.disabled = false;
+        stopRecordBtn.disabled = true;
+        playRecordBtn.disabled = !recordedBlob;
+        clearRecordBtn.disabled = !recordedBlob;
+        checkBtn.disabled = !recordedBlob;
+        recordingStatus.textContent = 'Запись готова. Вы можете прослушать её или отправить на проверку.';
+    }
+}
+
+function formatTime(seconds) {
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(Math.floor(seconds % 60)).padStart(2, '0');
+    return `${m}:${s}`;
+}
+
+function startTimer() {
+    recordingStartTime = Date.now();
+    recordingTimerInterval = setInterval(() => {
+        const elapsedSec = (Date.now() - recordingStartTime) / 1000;
+        recordingTimer.textContent = formatTime(elapsedSec);
+    }, 500);
+}
+
+function stopTimer() {
+    if (recordingTimerInterval) {
+        clearInterval(recordingTimerInterval);
+        recordingTimerInterval = null;
+    }
+}
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordedChunks = [];
+
+        let options = {};
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            options.mimeType = 'audio/webm;codecs=opus';
+        }
+
+        mediaRecorder = new MediaRecorder(stream, options);
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            recordedBlob = blob;
+            const url = URL.createObjectURL(blob);
+            audioPreview.src = url;
+            audioPreview.classList.remove('hidden');
+            stopTimer();
+            updateRecordingUI('recorded');
+
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        startTimer();
+        updateRecordingUI('recording');
+    } catch (error) {
+        console.error('Не удалось получить доступ к микрофону:', error);
+        alert('Не удалось получить доступ к микрофону. Проверьте разрешения в браузере.');
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+    }
+}
+
+function playRecording() {
+    if (audioPreview && recordedBlob) {
+        audioPreview.play().catch((err) => {
+            console.error('Ошибка при воспроизведении записи:', err);
+        });
+    }
+}
+
+function clearRecording() {
+    recordedBlob = null;
+    recordedChunks = [];
+    if (audioPreview.src) {
+        URL.revokeObjectURL(audioPreview.src);
+    }
+    audioPreview.src = '';
+    audioPreview.classList.add('hidden');
+    recordingTimer.textContent = '00:00';
+    updateRecordingUI('idle');
+}
+
+function resetRecording() {
+    clearRecording();
+}
+
 window.addEventListener('load', async () => {
     try {
         const response = await fetch(`${API_BASE}/health`);
         const data = await response.json();
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/cd98caeb-34f0-4c65-ad20-ad54c2d79475', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: `log_${Date.now()}`,
+                timestamp: Date.now(),
+                location: 'script.js:155',
+                message: 'health_check_success',
+                data: { ai_available: !!data.ai_available, apiBase: API_BASE },
+                runId: 'fix1',
+                hypothesisId: 'H2',
+            }),
+        }).catch(() => {});
+        // #endregion agent log
+
         if (!data.ai_available) {
-            console.warn('⚠️ ИИ проверка недоступна. Установите OPENAI_API_KEY для полной функциональности.');
+            console.warn('ИИ проверка недоступна. Установите GEMINI_API_KEY в конфигурации (backend/conf.env) для полной функциональности.');
         }
     } catch (error) {
         console.error('Не удалось подключиться к API:', error);
-        alert('⚠️ Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен на http://127.0.0.1:8000');
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/cd98caeb-34f0-4c65-ad20-ad54c2d79475', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: `log_${Date.now()}`,
+                timestamp: Date.now(),
+                location: 'script.js:165',
+                message: 'health_check_error',
+                data: { error: String(error), apiBase: API_BASE },
+                runId: 'fix1',
+                hypothesisId: 'H2',
+            }),
+        }).catch(() => {});
+        // #endregion agent log
+
+        alert('Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен на http://127.0.0.1:8000');
     }
 });
 

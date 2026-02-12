@@ -1,122 +1,79 @@
 import os
 from typing import Dict, Any
-import google.generativeai as genai
+
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 import json
 
-# Загружаем переменные окружения (пробуем разные пути)
-# ВАЖНО: Используем override=True чтобы перезаписать существующие переменные
-# Определяем базовую директорию проекта
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Пробуем загрузить из разных мест (в порядке приоритета)
-# Сначала backend/conf.env (самый приоритетный), потом conf.env, потом .env
 loaded = False
 for path in ["backend/conf.env", "conf.env", ".env"]:
     full_path = os.path.join(base_dir, path)
     if os.path.exists(full_path):
-        # override=True перезаписывает уже существующие переменные
         result = load_dotenv(full_path, override=True)
         if result:
-            # Проверяем, что ключ действительно загрузился
             test_key = os.getenv("GEMINI_API_KEY", "")
-            print(f"✅ Загружен файл конфигурации: {full_path}")
+            print(f"Загружен файл конфигурации: {full_path}")
             if test_key:
                 print(f"   Ключ после загрузки: {test_key[:15]}... (длина: {len(test_key)})")
             else:
-                print(f"   ⚠️  ВНИМАНИЕ: Файл загружен, но GEMINI_API_KEY не найден!")
+                print(f"   ВНИМАНИЕ: Файл загружен, но GEMINI_API_KEY не найден!")
             loaded = True
             break
 
 if not loaded:
-    # Пробуем стандартный .env (тоже с override)
     result = load_dotenv(override=True)
     if result:
-        print(f"✅ Загружен стандартный .env файл")
+        print(f"Загружен стандартный .env файл")
 
 
 class AIChecker:
     """Класс для проверки ответов ученика с помощью Google Gemini API"""
     
     def __init__(self):
+        self.client = None
+        self.model_name: str | None = None
+        self.available = False
+
         api_key = os.getenv("GEMINI_API_KEY")
         
-        # Детальное логирование для диагностики
-        print(f"🔍 Отладка: Проверка API ключа Gemini...")
+        print(f"Отладка: Проверка API ключа Gemini...")
         print(f"   Ключ найден: {'Да' if api_key else 'Нет'}")
         if api_key:
             print(f"   Длина ключа: {len(api_key)} символов")
             print(f"   Начало ключа: {api_key[:10]}...")
         
         if api_key:
-            # Проверяем, что ключ не пустой
             api_key_clean = api_key.strip()
             
             if api_key_clean and len(api_key_clean) > 20:
                 try:
-                    # Настраиваем Gemini API
-                    genai.configure(api_key=api_key_clean)
-                    
-                    # Получаем список доступных моделей
-                    print("   Получаем список доступных моделей...")
-                    models = genai.list_models()
-                    available_models = [
-                        m.name.split('/')[-1] 
-                        for m in models 
-                        if 'generateContent' in m.supported_generation_methods
-                    ]
-                    
-                    if not available_models:
-                        raise Exception("Нет доступных моделей для generateContent")
-                    
-                    # Фильтруем доступные модели, исключая экспериментальные
-                    # Экспериментальные модели (exp) имеют лимит 0 на бесплатном тарифе
-                    available_models = [
-                        m for m in available_models 
-                        if not m.endswith('-exp') and 'exp' not in m.lower()
-                    ]
-                    
-                    if not available_models:
-                        raise Exception("Нет доступных стабильных моделей (экспериментальные исключены)")
-                    
-                    # Предпочитаем стабильные flash модели (быстрее и дешевле)
-                    preferred_models = [
-                        'gemini-1.5-flash-latest',
-                        'gemini-1.5-flash',
-                        'gemini-1.5-pro-latest',
-                        'gemini-1.5-pro',
-                        'gemini-pro'
-                    ]
-                    
-                    # Ищем предпочитаемую модель среди доступных
-                    model_name = None
-                    for preferred in preferred_models:
-                        if preferred in available_models:
-                            model_name = preferred
-                            break
-                    
-                    # Если предпочитаемой нет, берём первую доступную
-                    if not model_name:
-                        model_name = available_models[0]
-                    
+                    self.client = genai.Client(api_key=api_key_clean)
+                    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
                     print(f"   Используем модель: {model_name}")
-                    self.model = genai.GenerativeModel(model_name)
+                    self.model_name = model_name
                     self.available = True
-                    print("✅ Google Gemini API ключ успешно загружен")
-                    print(f"✅ Используется модель: {model_name}")
+                    print("Google Gemini API ключ успешно загружен")
+                    print(f"Используется модель: {model_name}")
                             
                 except Exception as e:
-                    self.model = None
+                    self.client = None
+                    self.model_name = None
                     self.available = False
-                    print(f"❌ Ошибка при инициализации Gemini клиента: {e}")
+                    print(f"Ошибка при инициализации Gemini клиента: {e}")
             else:
-                self.model = None
+                self.client = None
+                self.model_name = None
                 self.available = False
-                print(f"⚠️  GEMINI_API_KEY слишком короткий: {len(api_key_clean)} символов (нужно > 20)")
+                print(f"GEMINI_API_KEY слишком короткий: {len(api_key_clean)} символов (нужно > 20)")
         else:
-            self.model = None
+            self.client = None
+            self.model_name = None
             self.available = False
-            print("⚠️  GEMINI_API_KEY не найден в переменных окружения.")
+            print("GEMINI_API_KEY не найден в переменных окружения.")
             print("   Проверьте файлы: conf.env, backend/conf.env, .env")
             print(f"   Текущая рабочая директория: {os.getcwd()}")
     
@@ -146,36 +103,30 @@ class AIChecker:
         if not self.available:
             return self._mock_check(task_type, student_answer)
         
-        # Формируем промпт в зависимости от типа задания
         system_prompt = self._get_system_prompt(task_type)
         user_prompt = self._get_user_prompt(
             task_type, student_answer, task_content, task_instructions
         )
         
-        # Объединяем системный и пользовательский промпты для Gemini
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
         
         try:
-            # Генерируем ответ через Gemini
-            # Используем более простую конфигурацию для совместимости
             generation_config = {
-                "temperature": 0.3,
+                "temperature": 0.2,
                 "response_mime_type": "application/json"
             }
             
-            response = self.model.generate_content(
-                full_prompt,
-                generation_config=generation_config
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt,
+                config=generation_config,
             )
             
-            # Логируем использование токенов
             if hasattr(response, 'usage_metadata'):
                 usage = response.usage_metadata
-                print(f"📊 Использовано токенов: {usage.prompt_token_count} входных + {usage.candidates_token_count} выходных = {usage.total_token_count} всего")
+                print(f"Использовано токенов: {usage.prompt_token_count} входных + {usage.candidates_token_count} выходных = {usage.total_token_count} всего")
             
-            # Парсим JSON ответ
             result_text = response.text.strip()
-            # Убираем markdown код блоки, если есть
             if result_text.startswith("```json"):
                 result_text = result_text[7:]
             if result_text.startswith("```"):
@@ -188,30 +139,28 @@ class AIChecker:
             return result
             
         except json.JSONDecodeError as e:
-            print(f"❌ Ошибка парсинга JSON ответа от Gemini: {e}")
+            print(f"Ошибка парсинга JSON ответа от Gemini: {e}")
             print(f"   Ответ: {response.text[:200] if hasattr(response, 'text') else 'Нет ответа'}")
             return self._mock_check(task_type, student_answer)
         except Exception as e:
             error_str = str(e)
-            # Проверяем, не превышена ли квота
             if "429" in error_str or "quota" in error_str.lower() or "rate limit" in error_str.lower():
-                print(f"⚠️  Превышен лимит запросов к Gemini API")
+                print(f"Превышен лимит запросов к Gemini API")
                 print(f"   Это может быть из-за:")
                 print(f"   - Превышения лимита запросов в минуту (15 запросов/мин)")
                 print(f"   - Превышения дневного лимита (1500 запросов/день)")
                 print(f"   - Использования экспериментальной модели с лимитом 0")
                 print(f"   Подождите немного и попробуйте снова")
-                # Возвращаем моковую проверку с информативным сообщением
                 result = self._mock_check(task_type, student_answer)
-                result["feedback"] = "⚠️ Превышен лимит запросов к Gemini API. Подождите немного и попробуйте снова. " + result["feedback"]
+                result["feedback"] = "Превышен лимит запросов к Gemini API. Подождите немного и попробуйте снова. " + result["feedback"]
                 return result
             else:
-                print(f"❌ Ошибка при обращении к Gemini API: {e}")
+                print(f"Ошибка при обращении к Gemini API: {e}")
             return self._mock_check(task_type, student_answer)
     
     def _get_system_prompt(self, task_type: str) -> str:
         """Получить системный промпт для типа задания"""
-        base_prompt = """Ты - эксперт по проверке устного собеседования по русскому языку для 9 класса.
+        base_prompt = """Ты - эксперт по проверке устного собеседования по русскому языку для 9 класса в России.
 Твоя задача - оценить ответ ученика по критериям ФИПИ и дать конструктивную обратную связь.
 Верни ответ ТОЛЬКО в формате JSON с полями: score (int), max_score (int), feedback (string), criteria (dict).
 """
@@ -288,6 +237,168 @@ class AIChecker:
         
         return prompts.get(task_type, f"Задание: {task_content}\n\nОтвет: {student_answer}")
     
+    def _get_audio_user_prompt(
+        self,
+        task_type: str,
+        task_content: str,
+        task_instructions: str,
+    ) -> str:
+        """Промпт для проверки по аудиозаписи."""
+        prompts = {
+            "reading": f"""Задание: Прочитай текст вслух выразительно.
+
+Текст для чтения:
+{task_content}
+
+Инструкции к чтению:
+{task_instructions}
+
+Ниже прикреплена АУДИОЗАПИСЬ ответа ученика. 
+Проанализируй ИМЕННО АУДИО: орфоэпию, фонетику, интонацию, темп чтения, паузы.
+Сравни чтение с исходным текстом, оцени правильность произношения.
+Верни только JSON в формате: score, max_score, feedback, criteria.""",
+            "retelling": f"""Задание: Перескажи текст, включив в пересказ указанное высказывание.
+
+Исходный текст:
+{task_content}
+
+Инструкции:
+{task_instructions}
+
+Ниже прикреплена АУДИОЗАПИСЬ пересказа ученика.
+Проанализируй содержание и устную речь (орфоэпия, выразительность, логика пересказа).
+Верни только JSON в формате: score, max_score, feedback, criteria.""",
+            "monologue": f"""Задание: Подготовь монолог на заданную тему.
+
+Тема:
+{task_content}
+
+Инструкции:
+{task_instructions}
+
+Ниже прикреплена АУДИОЗАПИСЬ монолога ученика.
+Оцени содержание и качество устной речи (орфоэпия, фонетика, выразительность, связность).
+Верни только JSON в формате: score, max_score, feedback, criteria.""",
+        }
+
+        return prompts.get(
+            task_type,
+            f"""Задание:
+{task_content}
+
+Инструкции:
+{task_instructions}
+
+Ниже прикреплена АУДИОЗАПИСЬ ответа ученика.
+Оцени ответ по критериям устного собеседования и верни JSON (score, max_score, feedback, criteria).""",
+        )
+    
+    async def check_answer_audio(
+        self,
+        task_type: str,
+        audio_bytes: bytes,
+        audio_mime: str,
+        task_content: str,
+        task_instructions: str,
+    ) -> Dict[str, Any]:
+        """
+        Проверяет ответ ученика по аудиозаписи.
+
+        Модель получает:
+        - системный промпт с описанием критериев;
+        - текст задания и инструкций;
+        - сам аудиофайл как отдельную модальность.
+        """
+        if not self.available:
+            # Если ИИ недоступен, возвращаем мок-оценку
+            return self._mock_check(task_type, "audio_answer")
+
+        system_prompt = self._get_system_prompt(task_type)
+        user_prompt = self._get_audio_user_prompt(
+            task_type=task_type,
+            task_content=task_content,
+            task_instructions=task_instructions,
+        )
+
+        normalized_mime = (audio_mime or "audio/webm").split(";")[0].strip().lower()
+        if normalized_mime.startswith("audio/webm"):
+            normalized_mime = "audio/webm"
+
+        try:
+            contents = [
+                system_prompt,
+                user_prompt,
+                types.Part.from_bytes(data=audio_bytes, mime_type=normalized_mime),
+            ]
+            generation_config = {
+                "temperature": 0.2,
+                "response_mime_type": "application/json",
+            }
+
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=contents,
+                config=generation_config,
+            )
+
+            if hasattr(response, "usage_metadata"):
+                usage = response.usage_metadata
+                print(
+                    f"Использовано токенов (audio): "
+                    f"{usage.prompt_token_count} входных + "
+                    f"{usage.candidates_token_count} выходных = "
+                    f"{usage.total_token_count} всего"
+                )
+
+            result_text = response.text.strip()
+            if result_text.startswith("```json"):
+                result_text = result_text[7:]
+            if result_text.startswith("```"):
+                result_text = result_text[3:]
+            if result_text.endswith("```"):
+                result_text = result_text[:-3]
+            result_text = result_text.strip()
+
+            result = json.loads(result_text)
+            return result
+
+        except json.JSONDecodeError as e:
+            print(f"Ошибка парсинга JSON ответа от Gemini (audio): {e}")
+            print(
+                f"   Ответ: {response.text[:200] if hasattr(response, 'text') else 'Нет ответа'}"
+            )
+            return self._mock_check(task_type, "audio_answer")
+        except Exception as e:
+            error_str = str(e)
+            if (
+                "429" in error_str
+                or "quota" in error_str.lower()
+                or "rate limit" in error_str.lower()
+            ):
+                print(f"Превышен лимит запросов к Gemini API (audio)")
+                result = self._mock_check(task_type, "audio_answer")
+                result["feedback"] = (
+                    "Превышен лимит запросов к Gemini API. "
+                    "Подождите немного и попробуйте снова. "
+                    + result["feedback"]
+                )
+                return result
+            elif "Server disconnected without sending a response" in error_str:
+                print(
+                    "Похоже на сетевую ошибку: прокси / VPN / файрвол обрывает "
+                    "соединение с серверами Gemini (audio)."
+                )
+                result = self._mock_check(task_type, "audio_answer")
+                result["feedback"] = (
+                    "Не удалось соединиться с серверами Gemini (audio). "
+                    "Чаще всего это означает проблемы с VPN, прокси или фильтрацией HTTPS‑трафика. "
+                    + result["feedback"]
+                )
+                return result
+            else:
+                print(f"Ошибка при обращении к Gemini API (audio): {e}")
+            return self._mock_check(task_type, "audio_answer")
+    
     def _mock_check(self, task_type: str, student_answer: str) -> Dict[str, Any]:
         """Моковая проверка, если ИИ недоступен"""
         max_scores = {
@@ -297,14 +408,13 @@ class AIChecker:
         }
         
         max_score = max_scores.get(task_type, 5)
-        # Простая эвристика: оценка на основе длины ответа
         answer_length = len(student_answer.split())
         score = min(max_score, max(1, answer_length // 20))
         
         return {
             "score": score,
             "max_score": max_score,
-            "feedback": "⚠️ ИИ проверка недоступна. Это примерная оценка. Установите GEMINI_API_KEY для полной проверки.",
+            "feedback": "ИИ проверка недоступна. Это примерная оценка. Установите GEMINI_API_KEY для полной проверки.",
             "criteria": {
                 "note": "Моковая проверка. Установите GEMINI_API_KEY для реальной проверки."
             }

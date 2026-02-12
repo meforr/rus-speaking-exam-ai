@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Устное собеседование по русскому языку</title>
+    <title>Устное собеседование 9 класс - OnCube</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -37,10 +37,24 @@
                 </div>
                 
                 <div class="answer-section">
-                    <h3>Ваш ответ:</h3>
-                    <textarea id="student-answer" rows="8" placeholder="Введите ваш ответ здесь..."></textarea>
+                    <h3>Ваш ответ (аудиозапись):</h3>
+                    <div class="audio-recorder">
+                        <p id="recording-status" class="recording-status">
+                            Нажмите «Начать запись» и произнесите ответ.
+                        </p>
+                        <div class="audio-recorder-controls">
+                            <button id="start-record-btn" class="record-btn primary">Начать запись</button>
+                            <button id="stop-record-btn" class="record-btn danger" disabled>Остановить</button>
+                            <button id="play-record-btn" class="record-btn" disabled>Прослушать</button>
+                            <button id="clear-record-btn" class="record-btn secondary" disabled>Удалить запись</button>
+                        </div>
+                        <div class="recording-info">
+                            <span id="recording-timer" class="recording-timer">00:00</span>
+                        </div>
+                        <audio id="audio-preview" class="audio-preview hidden" controls></audio>
+                    </div>
                     <div class="buttons">
-                        <button id="check-btn" class="check-btn">Проверить ответ</button>
+                        <button id="check-btn" class="check-btn" disabled>Отправить на проверку</button>
                         <button id="new-task-btn" class="new-task-btn">Новое задание</button>
                     </div>
                 </div>
