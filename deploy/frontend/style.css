@@ -1,0 +1,371 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #667eea;
+}
+
+header h1 {
+    color: #667eea;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 1.1em;
+}
+
+.exam-section {
+    margin-bottom: 30px;
+    transition: margin 0.6s ease, padding 0.6s ease, opacity 0.5s ease;
+}
+
+.exam-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    transition: margin 0.5s ease, font-size 0.5s ease;
+}
+
+.task-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+    transition: gap 0.5s ease, margin 0.5s ease;
+}
+
+/* После выбора типа — блок сдвигается вверх, акцент на задании */
+main.task-selected .exam-section {
+    margin-bottom: 12px;
+    padding-top: 0;
+}
+
+main.task-selected .exam-section h2 {
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    color: #666;
+}
+
+main.task-selected .task-types {
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+main.task-selected .task-btn {
+    padding: 10px 16px;
+    font-size: 0.95em;
+    transition: transform 0.2s, box-shadow 0.2s, padding 0.5s ease, font-size 0.5s ease;
+}
+
+main.task-selected .task-section {
+    animation: slideUpFocus 0.6s ease forwards;
+}
+
+@keyframes slideUpFocus {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.task-btn {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.task-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.task-btn:active {
+    transform: translateY(0);
+}
+
+.task-section {
+    margin-top: 30px;
+}
+
+.task-content {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.task-instructions {
+    margin-bottom: 20px;
+}
+
+.task-instructions h3,
+.task-text h3 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.task-text {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
+}
+
+.answer-section {
+    margin-top: 20px;
+}
+
+.answer-section h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.audio-recorder {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px dashed #c5c9d0;
+}
+
+.recording-status {
+    font-size: 0.95em;
+    color: #555;
+    margin-bottom: 12px;
+}
+
+.audio-recorder-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.record-btn {
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: none;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    background: #e2e6f0;
+    color: #333;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.record-btn.primary {
+    background: #28a745;
+    color: #fff;
+}
+
+.record-btn.danger {
+    background: #dc3545;
+    color: #fff;
+}
+
+.record-btn.secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.record-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.record-btn:not(:disabled):hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.recording-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.recording-timer {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.audio-preview {
+    width: 100%;
+    margin-top: 6px;
+}
+
+.buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.check-btn,
+.new-task-btn,
+.back-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.check-btn {
+    background: #28a745;
+    color: white;
+    flex: 1;
+}
+
+.check-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.new-task-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.new-task-btn:hover {
+    background: #5a6268;
+}
+
+.back-btn {
+    background: #667eea;
+    color: white;
+    margin-top: 20px;
+}
+
+.back-btn:hover {
+    background: #5568d3;
+}
+
+.result-section {
+    margin-top: 30px;
+    padding: 25px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.result-section h2 {
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.result-task-type {
+    font-size: 0.95em;
+    color: #667eea;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.score {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.score-value {
+    color: #28a745;
+}
+
+.score-max {
+    color: #666;
+    font-size: 0.6em;
+}
+
+.feedback {
+    background: white;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.feedback h3 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.feedback p {
+    line-height: 1.6;
+    color: #333;
+}
+
+.criteria {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.2em;
+    color: #667eea;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+
+    header h1 {
+        font-size: 1.8em;
+    }
+
+    .task-types {
+        grid-template-columns: 1fr;
+    }
+}
+
