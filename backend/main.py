@@ -1,12 +1,15 @@
+import os
+
+os.environ["HTTP_PROXY"] = "http://0APZSj:5VjV6S@196.19.8.72:8000"
+os.environ["HTTPS_PROXY"] = "http://0APZSj:5VjV6S@196.19.8.72:8000"
+
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, List
-import os
 from dotenv import load_dotenv
-
 from backend.ai_checker import AIChecker
 from backend.exam_data import ExamData
 
