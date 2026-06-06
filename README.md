@@ -1,7 +1,3 @@
-#test API - AIzaSyBNJeJ3ygGfryHcmkI4P-jBC1vPzpbDb3w
-
-https://disk.yandex.ru/d/yzxvbGxVSPIZPQ
-
 # Устное собеседование по русскому языку (9 класс)
 
 Веб-приложение для подготовки к устному собеседованию по русскому языку с автоматической проверкой ответов через Google Gemini AI.
