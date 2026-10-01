@@ -67,6 +67,54 @@
                     <span class="score-value" id="score"></span>
                     <span class="score-max" id="max-score"></span>
                 </div>
+
+                <!-- Акустический анализ речи -->
+                <div id="dsp-analytics" class="dsp-analytics hidden">
+                    <div class="dsp-header">
+                        <h3>Акустический анализ речи</h3>
+                    </div>
+
+                    <div class="dsp-cards-grid">
+                        <div class="dsp-card">
+                            <div class="dsp-card-title">Темп речи (WPM)</div>
+                            <div class="dsp-card-value">
+                                <span id="dsp-wpm">0</span>
+                                <span class="unit">сл/мин</span>
+                            </div>
+                            <div id="dsp-tempo-badge" class="dsp-status-badge">Норма</div>
+                            <div class="dsp-hint">Норматив: 100–120 сл/мин</div>
+                        </div>
+
+                        <div class="dsp-card">
+                            <div class="dsp-card-title">Баланс речи и пауз</div>
+                            <div class="dsp-card-value">
+                                <span id="dsp-speech-time">0с</span>
+                                <span class="unit">речи</span>
+                            </div>
+                            <div class="ratio-bar-container">
+                                <div id="dsp-speech-bar" class="ratio-bar speech" style="width: 70%"></div>
+                                <div id="dsp-pause-bar" class="ratio-bar pause" style="width: 30%"></div>
+                            </div>
+                            <div class="dsp-hint" id="dsp-pause-summary">Паузы: 0с (0%)</div>
+                        </div>
+
+                        <div class="dsp-card">
+                            <div class="dsp-card-title">Интонация и членение</div>
+                            <div class="dsp-card-value">
+                                <span id="dsp-just-pct">100%</span>
+                                <span class="unit">обоснованно</span>
+                            </div>
+                            <div class="dsp-hint" id="dsp-intonation-desc">Естественный контур</div>
+                        </div>
+                    </div>
+
+                    <!-- Орфоэпический контроль -->
+                    <div id="dsp-orthoepy-box" class="dsp-orthoepy-box hidden">
+                        <div class="dsp-subheading">Слова задания с контролем ударения:</div>
+                        <div id="dsp-orthoepy-list" class="orthoepy-chips-list"></div>
+                    </div>
+                </div>
+
                 <div class="feedback">
                     <h3>Обратная связь:</h3>
                     <p id="feedback-text"></p>

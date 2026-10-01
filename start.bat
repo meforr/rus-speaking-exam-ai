@@ -15,10 +15,6 @@ if not exist "requirements.txt" (
     exit /b 1
 )
 
-rem #region agent log
-echo {"id":"log_%RANDOM%","timestamp":0,"location":"start.bat:20","message":"script_start","data":{"step":"after_requirements_check"},"runId":"run1","hypothesisId":"H1"}>>".cursor\debug.log"
-rem #endregion agent log
-
 rem --- Поиск/установка локального интерпретатора Python (python_portable) ---
 set "PYTHON_EXE="
 set "PY_VER=3.12.2"
@@ -29,15 +25,7 @@ if exist "%INSTALL_DIR%\python.exe" (
     set "PYTHON_EXE=%INSTALL_DIR%\python.exe"
 )
 
-rem #region agent log
-echo {"id":"log_%RANDOM%","timestamp":0,"location":"start.bat:36","message":"python_exe_selected_initial","data":{"PYTHON_EXE":"%PYTHON_EXE%"},"runId":"run1","hypothesisId":"H2"}>>".cursor\debug.log"
-rem #endregion agent log
-
 if not defined PYTHON_EXE (
-    rem #region agent log
-    echo {"id":"log_%RANDOM%","timestamp":0,"location":"start.bat:44","message":"python_not_found_start_install","data":{"PY_VER":"%PY_VER%","INSTALL_DIR":"%INSTALL_DIR%","PY_ZIP":"%PY_ZIP%","method":"embed_zip"},"runId":"run1","hypothesisId":"H4"}>>".cursor\debug.log"
-    rem #endregion agent log
-
     echo Скачивание портативного Python %PY_VER% ...
     curl -L "https://www.python.org/ftp/python/%PY_VER%/%PY_ZIP%" -o "%PY_ZIP%"
 
@@ -64,10 +52,6 @@ if not defined PYTHON_EXE (
         exit /b 1
     )
 )
-
-rem #region agent log
-echo {"id":"log_%RANDOM%","timestamp":0,"location":"start.bat:66","message":"python_exe_final","data":{"PYTHON_EXE":"%PYTHON_EXE%"},"runId":"run1","hypothesisId":"H4"}>>".cursor\debug.log"
-rem #endregion agent log
 
 if not defined PYTHON_EXE (
     echo [ОШИБКА] Подходящий интерпретатор Python не найден.

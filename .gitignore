@@ -3,6 +3,31 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Portable Python & local executables
+python_portable/
+python_installer.exe
+*.exe
+*.zip
+deploy/
+deploy.zip
+
+# AI & Editor artifacts
+.cursor/
+graphify-out/
+
+# Audio recordings
+*.wav
+*.mp3
+*.webm
+*.ogg
+*.m4a
+
+# Config & Environment
+backend/conf.env
+conf.env
+.env
+.env.*
+
 # C extensions
 *.so
 # Зависимости
@@ -248,3 +273,4 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+/AGENT-INFO
