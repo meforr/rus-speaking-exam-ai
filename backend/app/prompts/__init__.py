@@ -1,4 +1,4 @@
-﻿from backend.app.prompts.base import BASE_SYSTEM_PROMPT
+from backend.app.prompts.base import BASE_SYSTEM_PROMPT
 from backend.app.prompts.reading import (
     READING_SYSTEM_PROMPT,
     get_reading_text_prompt,

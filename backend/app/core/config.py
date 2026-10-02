@@ -24,10 +24,8 @@ class Settings(BaseModel):
     host: str = Field(default_factory=lambda: os.getenv("HOST", "127.0.0.1"))
     port: int = Field(default_factory=lambda: int(os.getenv("PORT", 8000)))
 
-    gemini_api_key: Optional[str] = Field(
-        default_factory=lambda: os.getenv("GEMINI_API_KEY") or os.getenv("\ufeffGEMINI_API_KEY")
-    )
-    gemini_model: str = Field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-2.5-flash"))
+    gemini_api_key: Optional[str] = Field(default_factory=lambda: os.getenv("GEMINI_API_KEY"))
+    gemini_model: str = Field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-1.5-flash"))
 
     http_proxy: Optional[str] = Field(
         default_factory=lambda: os.getenv("HTTP_PROXY") or os.getenv("http_proxy")

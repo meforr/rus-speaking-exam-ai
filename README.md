@@ -105,29 +105,19 @@ python -m uvicorn backend.main:app --reload
 ## 📁 Структура проекта
 
 ```
-rus-speaking-exam-ai/
-├── backend/
-│   ├── app/
-│   │   ├── api/             # Эндпоинты FastAPI (tasks, evaluate, health)
-│   │   ├── core/            # Конфигурация (Pydantic Settings)
-│   │   ├── models/          # Схемы данных Pydantic
-│   │   ├── prompts/         # Промпты и критерии ФИПИ
-│   │   ├── services/        # Репозиторий заданий и клиент Gemini AI
-│   │   └── main.py          # Сборка FastAPI приложения
-│   └── main.py              # Фасад для обратной совместимости
-├── data/
-│   └── tasks/               # Банк заданий (JSON)
-│       ├── reading.json     # Задания 1 (Чтение)
-│       ├── retelling.json   # Задания 2 (Пересказ)
-│       └── monologue.json   # Задания 3 (Монолог)
-├── frontend/                # Веб-интерфейс
-│   ├── index.html           # Разметка
-│   ├── style.css            # Стили
-│   └── script.js            # Логика записи аудио и взаимодействие с API
-├── .env.example             # Пример конфигурации
-├── requirements.txt         # Зависимости Python
-├── run_server.py            # Скрипт запуска сервера
-└── start.bat                # Автозапуск под Windows
+rus-oral-exam-ai/
+├── backend/              # Бэкенд на FastAPI
+│   ├── main.py          # Главный файл приложения с API endpoints
+│   ├── ai_checker.py    # Модуль проверки ответов через Gemini AI
+│   ├── exam_data.py     # База заданий (тексты, темы)
+│   └── conf.env         # Конфигурация (API ключ, настройки)
+├── frontend/            # Минимальный фронтенд
+│   ├── index.html       # Главная страница
+│   ├── style.css        # Стили
+│   └── script.js        # Логика взаимодействия с API
+├── requirements.txt     # Зависимости Python
+├── run_server.py        # Скрипт для запуска сервера
+└── README.md            # Документация
 ```
 
 ## 🔧 Технологии
@@ -135,13 +125,13 @@ rus-speaking-exam-ai/
 - **Backend:** FastAPI, Python 3.11+
 - **AI:** Google Gemini API  
   - модель по умолчанию: `gemini-1.5-flash` (поддерживает аудио-вход и подходит для анализа устной речи)  
-  - при необходимости можно задать другую модель через переменную `GEMINI_MODEL`
+  - при необходимости можно задать другую модель через переменную `GEMINI_MODEL` (например, аудио‑ориентированные варианты линейки Gemini 2.5, если они доступны вашему ключу)
 - **Frontend:** HTML, CSS, JavaScript (vanilla)
 - **Server:** Uvicorn
 
 ## ⚙️ Конфигурация
 
-Создайте файл `.env` (на основе `.env.example`) в корне проекта или `backend/conf.env`:
+Файл `backend/conf.env`:
 ```env
 GEMINI_API_KEY=ваш_ключ_здесь
 HOST=127.0.0.1

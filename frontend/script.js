@@ -31,19 +31,6 @@ const audioPreview = document.getElementById('audio-preview');
 const recordingStatus = document.getElementById('recording-status');
 const recordingTimer = document.getElementById('recording-timer');
 
-// DSP Analytics Elements
-const dspAnalytics = document.getElementById('dsp-analytics');
-const dspWpm = document.getElementById('dsp-wpm');
-const dspTempoBadge = document.getElementById('dsp-tempo-badge');
-const dspSpeechTime = document.getElementById('dsp-speech-time');
-const dspSpeechBar = document.getElementById('dsp-speech-bar');
-const dspPauseBar = document.getElementById('dsp-pause-bar');
-const dspPauseSummary = document.getElementById('dsp-pause-summary');
-const dspJustPct = document.getElementById('dsp-just-pct');
-const dspIntonationDesc = document.getElementById('dsp-intonation-desc');
-const dspOrthoepyBox = document.getElementById('dsp-orthoepy-box');
-const dspOrthoepyList = document.getElementById('dsp-orthoepy-list');
-
 const taskTypeNames = {
     reading: 'Чтение текста',
     retelling: 'Пересказ текста',
@@ -69,7 +56,6 @@ newTaskBtn.addEventListener('click', () => {
 });
 backBtn.addEventListener('click', () => {
     resultSection.classList.add('hidden');
-    if (dspAnalytics) dspAnalytics.classList.add('hidden');
     taskSection.classList.remove('hidden');
 });
 
@@ -77,7 +63,6 @@ async function loadTask(taskType) {
     currentTaskType = taskType;
     taskSection.classList.remove('hidden');
     resultSection.classList.add('hidden');
-    if (dspAnalytics) dspAnalytics.classList.add('hidden');
     resetRecording();
     
     try {
@@ -98,7 +83,12 @@ async function loadTask(taskType) {
 function displayTask(task) {
     taskTitle.textContent = taskTypeNames[task.task_type];
     instructions.textContent = task.instructions;
-    taskTextContent.innerHTML = `<p>${task.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`;
+    
+    if (task.task_type === 'reading' || task.task_type === 'retelling') {
+        taskTextContent.innerHTML = `<p>${task.content.replace(/\n/g, '<br>')}</p>`;
+    } else {
+        taskTextContent.innerHTML = `<p><strong>Тема:</strong> ${task.content}</p>`;
+    }
 }
 
 async function checkAnswer() {
@@ -145,70 +135,6 @@ async function checkAnswer() {
     }
 }
 
-function renderDSPAnalytics(dsp) {
-    if (!dspAnalytics) return;
-
-    if (!dsp || !dsp.total_duration_sec || dsp.total_duration_sec <= 0) {
-        dspAnalytics.classList.add('hidden');
-        return;
-    }
-
-    dspAnalytics.classList.remove('hidden');
-
-    // 1. Темп речи (WPM) и плашка соответствия норме
-    if (dspWpm) dspWpm.textContent = Math.round(dsp.wpm);
-    if (dspTempoBadge) {
-        dspTempoBadge.className = 'dsp-status-badge';
-        if (dsp.tempo_status === 'норма') {
-            dspTempoBadge.classList.add('norm');
-            dspTempoBadge.textContent = 'Норма';
-        } else if (dsp.tempo_status === 'замедленный') {
-            dspTempoBadge.classList.add('slow');
-            dspTempoBadge.textContent = 'Замедленный';
-        } else {
-            dspTempoBadge.classList.add('fast');
-            dspTempoBadge.textContent = 'Ускоренный';
-        }
-    }
-
-    // 2. Баланс звучащей речи и пауз
-    const speechSec = dsp.speech_duration_sec.toFixed(1);
-    const pauseSec = dsp.pause_duration_sec.toFixed(1);
-    const speechPct = Math.max(0, Math.min(100, Math.round(dsp.speech_ratio_pct)));
-    const pausePct = Math.max(0, 100 - speechPct);
-
-    if (dspSpeechTime) dspSpeechTime.textContent = `${speechSec}с`;
-    if (dspSpeechBar) dspSpeechBar.style.width = `${speechPct}%`;
-    if (dspPauseBar) dspPauseBar.style.width = `${pausePct}%`;
-    if (dspPauseSummary) {
-        const unjCount = dsp.unjustified_pauses_count || 0;
-        dspPauseSummary.textContent = `Паузы: ${pauseSec}с (${pausePct}%), ${unjCount} ${unjCount === 1 ? 'запинка' : (unjCount >= 2 && unjCount <= 4 ? 'запинки' : 'запинок')}`;
-    }
-
-    // 3. Интонационная обоснованность
-    if (dspJustPct) dspJustPct.textContent = `${dsp.justified_pauses_pct}%`;
-    if (dspIntonationDesc) dspIntonationDesc.textContent = dsp.intonation_status || 'Естественный контур';
-
-    // 4. Орфоэпический контроль
-    if (dspOrthoepyBox && dspOrthoepyList) {
-        if (dsp.orthoepy_matches && dsp.orthoepy_matches.length > 0) {
-            dspOrthoepyBox.classList.remove('hidden');
-            dspOrthoepyList.innerHTML = dsp.orthoepy_matches.map(m => `
-                <div class="orthoepy-chip">
-                    <div>
-                        <span class="stressed-word">${m.stressed}</span>
-                        <span class="wrong-word">не «${m.wrong}»</span>
-                    </div>
-                    <span class="rule-text">Правило: ${m.rule}</span>
-                </div>
-            `).join('');
-        } else {
-            dspOrthoepyBox.classList.add('hidden');
-            dspOrthoepyList.innerHTML = '';
-        }
-    }
-}
-
 function displayResult(result) {
     resultTaskTypeEl.textContent = taskTypeNames[currentTask.task_type] || currentTask.task_type;
     scoreElement.textContent = result.score;
@@ -218,23 +144,9 @@ function displayResult(result) {
     if (result.criteria && Object.keys(result.criteria).length > 0) {
         let criteriaHtml = '<h3>Критерии оценки:</h3><ul>';
         for (const [key, value] of Object.entries(result.criteria)) {
-            if (key === 'note') continue;
-            // Чистим название от нейрослопа и заменяем старые формулировки
-            let cleanKey = key.replace(/правильность произношения\s*\/\s*орфоэпия/i, 'Орфоэпия')
-                              .replace(/\s*\(dsp.*?\)/gi, '')
-                              .trim();
-            if (cleanKey.toLowerCase().includes('интонационное членение')) continue;
-
-            // Оставляем ТОЛЬКО оценку (числовой балл), без комментариев
-            let cleanVal = String(value).trim();
-            const match = cleanVal.match(/^(\d+(?:\s*\/\s*\d+)?)/);
-            if (match) {
-                cleanVal = match[1];
-            } else {
-                cleanVal = cleanVal.split('/')[0].trim();
+            if (key !== 'note') {
+                criteriaHtml += `<li><strong>${key}:</strong> ${value}</li>`;
             }
-
-            criteriaHtml += `<li><strong>${cleanKey}:</strong> ${cleanVal}</li>`;
         }
         criteriaHtml += '</ul>';
         criteriaElement.innerHTML = criteriaHtml;
@@ -242,13 +154,6 @@ function displayResult(result) {
         criteriaElement.innerHTML = '';
     }
     
-    // Отображаем акустическую аналитику при наличии
-    if (result.dsp) {
-        renderDSPAnalytics(result.dsp);
-    } else if (dspAnalytics) {
-        dspAnalytics.classList.add('hidden');
-    }
-
     resultSection.classList.remove('hidden');
 }
 
@@ -373,11 +278,44 @@ window.addEventListener('load', async () => {
         const response = await fetch(`${API_BASE}/health`);
         const data = await response.json();
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/cd98caeb-34f0-4c65-ad20-ad54c2d79475', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: `log_${Date.now()}`,
+                timestamp: Date.now(),
+                location: 'script.js:155',
+                message: 'health_check_success',
+                data: { ai_available: !!data.ai_available, apiBase: API_BASE },
+                runId: 'fix1',
+                hypothesisId: 'H2',
+            }),
+        }).catch(() => {});
+        // #endregion agent log
+
         if (!data.ai_available) {
-            console.warn('ИИ проверка недоступна. Установите GEMINI_API_KEY в конфигурации (backend/conf.env или .env) для полной функциональности.');
+            console.warn('ИИ проверка недоступна. Установите GEMINI_API_KEY в конфигурации (backend/conf.env) для полной функциональности.');
         }
     } catch (error) {
         console.error('Не удалось подключиться к API:', error);
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/cd98caeb-34f0-4c65-ad20-ad54c2d79475', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: `log_${Date.now()}`,
+                timestamp: Date.now(),
+                location: 'script.js:165',
+                message: 'health_check_error',
+                data: { error: String(error), apiBase: API_BASE },
+                runId: 'fix1',
+                hypothesisId: 'H2',
+            }),
+        }).catch(() => {});
+        // #endregion agent log
+
         alert('Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен на http://127.0.0.1:8000');
     }
 });

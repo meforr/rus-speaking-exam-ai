@@ -20,6 +20,7 @@ class TaskRepository:
             "reading": self._load_file("reading.json"),
             "retelling": self._load_file("retelling.json"),
             "monologue": self._load_file("monologue.json"),
+            "dialogue": self._load_file("dialogue.json"),
         }
 
     def _load_file(self, filename: str) -> List[TaskItem]:
@@ -34,7 +35,6 @@ class TaskRepository:
             return []
 
     def get_tasks_by_type(self, task_type: str) -> List[TaskItem]:
-        self.load_all()
         normalized = task_type.lower()
         return self._cache.get(normalized, [])
 
@@ -57,4 +57,5 @@ class TaskRepository:
             reading=self.get_tasks_by_type("reading"),
             retelling=self.get_tasks_by_type("retelling"),
             monologue=self.get_tasks_by_type("monologue"),
+            dialogue=self.get_tasks_by_type("dialogue") or None,
         )

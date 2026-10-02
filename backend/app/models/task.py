@@ -7,6 +7,7 @@ class TaskType(str, Enum):
     READING = "reading"
     RETELLING = "retelling"
     MONOLOGUE = "monologue"
+    DIALOGUE = "dialogue"
 
 
 class TaskItem(BaseModel):
@@ -26,3 +27,4 @@ class TasksListResponse(BaseModel):
     reading: List[TaskItem] = Field(default_factory=list)
     retelling: List[TaskItem] = Field(default_factory=list)
     monologue: List[TaskItem] = Field(default_factory=list)
+    dialogue: Optional[List[TaskItem]] = None

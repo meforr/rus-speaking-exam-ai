@@ -241,13 +241,10 @@ class DSPAnalyzer:
             prob = float(out[0][0])
             speech_probs.append(prob)
 
+        # Выделение интервалов пауз (> 350 мс)
         frame_dur = frame_size / sr
         is_speech = np.array(speech_probs) > 0.45
         speech_frames = int(np.sum(is_speech))
-
-        if speech_frames == 0 and np.mean(np.abs(audio)) > 0.008:
-            return self._energy_vad_fallback(audio, sr)
-
         speech_duration = speech_frames * frame_dur
         pause_duration = max(0.0, (n_samples / sr) - speech_duration)
 

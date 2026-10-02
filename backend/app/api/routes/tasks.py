@@ -1,4 +1,4 @@
-﻿from typing import Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.app.api.deps import get_task_repository
